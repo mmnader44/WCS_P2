@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from joblib import load
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neighbors import NearestNeighbors
 from pathlib import Path
 import base64
 import seaborn as sns
@@ -39,9 +40,9 @@ df = pd.read_csv(fichier_data, sep=',', lineterminator='\n')
 
 # Charger les composants sauvegardés
 chemin = Path(__file__).parent
-tf = load(chemin / "tfidf_vectorizer.joblib")
+#tf = load(chemin / "tfidf_vectorizer.joblib")
 tfidf_matrix = load(chemin / 'tfidf_matrix.joblib')
-modelNN = load(chemin / "model_projet2.joblib")
+#modelNN = load(chemin / "model_projet2_V2.joblib")
 indices = load(chemin / "indices.joblib")
 titles = load(chemin / "titles.joblib")
 
@@ -55,6 +56,9 @@ st.write('\n')
 
 dico_bands = {name: index for name, index in zip(titles, indices)}
 
+x = st.select_slider("Nombre de films à recommander :", options=range(1,21))
+nb = x+1
+
 # Setup tabs
 tab1, tab2 = st.tabs(["FILM DETECTOR", "INFOS GENERALES DE LA BDD"])
 
@@ -65,6 +69,7 @@ with tab1:
     eureka=False
 
     with col1:
+
         st.write("Choisi un film camarade:")
         user_input = st.selectbox('', titles.sort_values(ascending=True), index=None)
 
@@ -81,6 +86,9 @@ with tab1:
             st.write(f"Synopsys : {df.loc[user_index, 'overview']}")
             st.image(f"https://image.tmdb.org/t/p/original/{df.loc[user_index, 'poster_path']}")
             st.write('\n')
+
+            modelNN = NearestNeighbors(n_neighbors=nb)
+            modelNN.fit(tfidf_matrix)
             _, indices = modelNN.kneighbors(tfidf_matrix[user_index])
             eureka=True
 
